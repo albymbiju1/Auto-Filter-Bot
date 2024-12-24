@@ -46,9 +46,12 @@ else:
 
 
 # Channels
-INDEX_CHANNELS = [int(index_channels) if index_channels.startswith("-") else index_channels for index_channels in environ.get('INDEX_CHANNELS', '').split()]
+INDEX_CHANNELS = environ.get('INDEX_CHANNELS', '')
 if len(INDEX_CHANNELS) == 0:
     print('Info - INDEX_CHANNELS is empty')
+else:
+    INDEX_CHANNELS = [int(channel) if channel.startswith('-') else channel for channel in INDEX_CHANNELS.split(',')]
+    
 LOG_CHANNEL = environ.get('LOG_CHANNEL', '')
 if len(LOG_CHANNEL) == 0:
     print('Error - LOG_CHANNEL is missing, exiting now')
