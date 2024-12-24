@@ -42,7 +42,8 @@ if len(ADMINS) == 0:
     print('Error - ADMINS is missing, exiting now')
     exit()
 else:
-    ADMINS = [int(admins) for admins in ADMINS.split()]
+    ADMINS = [int(admin) for admin in ADMINS.split(',')]  # Split by commas
+
 
 # Channels
 INDEX_CHANNELS = [int(index_channels) if index_channels.startswith("-") else index_channels for index_channels in environ.get('INDEX_CHANNELS', '').split()]
