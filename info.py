@@ -122,7 +122,8 @@ if len(BIN_CHANNEL) == 0:
     print('Error - BIN_CHANNEL is missing, exiting now')
     exit()
 else:
-    BIN_CHANNEL = int(BIN_CHANNEL)
+    BIN_CHANNEL = [int(channel) for channel in BIN_CHANNEL.split(',')]
+
 URL = environ.get("URL", "")
 if len(URL) == 0:
     print('Error - URL is missing, exiting now')
