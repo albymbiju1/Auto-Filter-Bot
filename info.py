@@ -130,10 +130,12 @@ else:
         print(f"Error - Invalid channel ID format in BIN_CHANNEL: {BIN_CHANNEL}")
         exit()
 
+# URL
 URL = environ.get("URL", "")
 if len(URL) == 0:
-    print('Error - URL is missing, exiting now')
-    exit()
+    print('Warning - URL is missing, using default placeholder URL for testing')
+    # Set a placeholder URL for testing purposes, or use localhost
+    URL = "http://localhost"
 else:
     if URL.startswith(('https://', 'http://')):
         if not URL.endswith("/"):
@@ -143,6 +145,5 @@ else:
     else:
         print('Error - URL is not valid, exiting now')
         exit()
-
 #start_command_reactions
 REACTIONS = ["🤝", "😇", "🤗", "😍", "👍", "🎅", "😐", "🥰", "🤩", "😱", "🤣", "😘", "👏", "😛", "😈", "🎉", "⚡️", "🫡", "🤓", "😎", "🏆", "🔥", "🤭", "🌚", "🆒", "👻", "😁"] #don't add any emoji because tg not support all emoji reactions
