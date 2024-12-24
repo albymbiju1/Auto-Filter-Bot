@@ -1,5 +1,5 @@
 import os
-import time
+import time as _time  # Alias `time` to `_time`
 import asyncio
 import uvloop
 
@@ -36,7 +36,7 @@ class Bot(Client):
         )
 
     async def start(self):
-        temp.START_TIME = time.time()
+        temp.START_TIME = _time.time()  # Use `_time` instead of `time`
         b_users, b_chats = await db.get_banned()
         temp.BANNED_USERS = b_users
         temp.BANNED_CHATS = b_chats
@@ -47,7 +47,10 @@ class Bot(Client):
         except Exception as e:
             print("Something Went Wrong While Connecting To Database!", e)
             exit()
+
+        # Start the bot properly
         await super().start()
+
         if os.path.exists('restart.txt'):
             with open("restart.txt") as file:
                 chat_id, msg_id = map(int, file)
@@ -56,6 +59,7 @@ class Bot(Client):
             except:
                 pass
             os.remove('restart.txt')
+        
         temp.BOT = self
         await Media.ensure_indexes()
         me = await self.get_me()
@@ -64,23 +68,25 @@ class Bot(Client):
         temp.B_NAME = me.first_name
         username = '@' + me.username
         print(f"{me.first_name} is started now 🤗")
-        #groups = await db.get_all_chats_count()
-        #for grp in groups:
-            #await save_group_settings(grp['id'], 'fsub', "")
+        
+        # Setup web app
         app = web.AppRunner(web_app)
         await app.setup()
         await web.TCPSite(app, "0.0.0.0", PORT).start()
+
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
         except:
             print("Error - Make sure bot admin in LOG_CHANNEL, exiting now")
             exit()
+        
         try:
             m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
             await m.delete()
         except:
             print("Error - Make sure bot admin in BIN_CHANNEL, exiting now")
             exit()
+
         for admin in ADMINS:
             await self.send_message(chat_id=admin, text="<b>✅ ʙᴏᴛ ʀᴇsᴛᴀʀᴛᴇᴅ</b>")
 
@@ -89,46 +95,35 @@ class Bot(Client):
         print("Bot Stopped! Bye...")
 
     async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:
-        """Iterate through a chat sequentially.
-        This convenience method does the same as repeatedly calling :meth:`~pyrogram.Client.get_messages` in a loop, thus saving
-        you from the hassle of setting up boilerplate code. It is useful for getting the whole chat messages with a
-        single call.
-        Parameters:
-            chat_id (``int`` | ``str``):
-                Unique identifier (int) or username (str) of the target chat.
-                For your personal cloud (Saved Messages) you can simply use "me" or "self".
-                For a contact that exists in your Telegram address book you can use his phone number (str).
-                
-            limit (``int``):
-                Identifier of the last message to be returned.
-                
-            offset (``int``, *optional*):
-                Identifier of the first message to be returned.
-                Defaults to 0.
-        Returns:
-            ``Generator``: A generator yielding :obj:`~pyrogram.types.Message` objects.
-        Example:
-            .. code-block:: python
-                async for message in app.iter_messages("pyrogram", 1000, 100):
-                    print(message.text)
-        """
+        """Iterate through a chat sequentially."""
         current = offset
         while True:
             new_diff = min(200, limit - current)
             if new_diff <= 0:
                 return
-            messages = await self.get_messages(chat_id, list(range(current, current+new_diff+1)))
+            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1)))
             for message in messages:
                 yield message
                 current += 1
 
-app = Bot()
-try:
-    app.run()
-except FloodWait as vp:
-    time = get_readable_time(vp.value)
-    print(f"Flood Wait Occured, Sleeping For {time}")
-    asyncio.sleep(vp.value)
-    print("Now Ready For Deploying !")
-    app.run()
+# Function to handle the bot start with flood wait handling
+async def start_bot():
+    while True:
+        try:
+            app = Bot()
+            await app.start()
+            break  # exit the loop once the bot starts successfully
+        except FloodWait as vp:
+            wait_time = get_readable_time(vp.value)
+            print(f"Flood Wait Occurred, Sleeping For {wait_time}")
+            await asyncio.sleep(vp.value)  # Await asyncio sleep to handle delay
+            print("Now Ready For Deploying!")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            break  # Exit the loop on any other error
+
+# Start the bot
+if __name__ == "__main__":
+    asyncio.run(start_bot())
+
 
