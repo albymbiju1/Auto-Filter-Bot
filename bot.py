@@ -76,17 +76,26 @@ class Bot(Client):
 
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
-        except:
-            print("Error - Make sure bot admin in LOG_CHANNEL, exiting now")
+        except Exception as e:
+            print(f"Error while sending message to LOG_CHANNEL: {e}")
             exit()
         
+        # Checking permissions in BIN_CHANNEL
         try:
+            chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
+            if not chat_member.can_send_messages:
+                print("Bot does not have permission to send messages in BIN_CHANNEL")
+                await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
+                exit()
+            # Send test message and delete
             m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
             await m.delete()
-        except:
-            print("Error - Make sure bot admin in BIN_CHANNEL, exiting now")
+        except Exception as e:
+            print(f"Error while sending message to BIN_CHANNEL: {e}")
+            await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
             exit()
 
+        # Send restart notifications to admins
         for admin in ADMINS:
             await self.send_message(chat_id=admin, text="<b>✅ ʙᴏᴛ ʀᴇsᴛᴀʀᴛᴇᴅ</b>")
 
@@ -125,5 +134,3 @@ async def start_bot():
 # Start the bot
 if __name__ == "__main__":
     asyncio.run(start_bot())
-
-
