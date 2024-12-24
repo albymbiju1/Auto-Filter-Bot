@@ -118,11 +118,17 @@ OWNER_UPI_ID = environ.get('OWNER_UPI_ID', 'sampleupi@upi')
 # for stream
 IS_STREAM = is_enabled('IS_STREAM', True)
 BIN_CHANNEL = environ.get("BIN_CHANNEL", "")
+
 if len(BIN_CHANNEL) == 0:
     print('Error - BIN_CHANNEL is missing, exiting now')
     exit()
 else:
-    BIN_CHANNEL = [int(channel) for channel in BIN_CHANNEL.split(',')]
+    try:
+        # Split the BIN_CHANNEL by commas and convert to integers
+        BIN_CHANNEL = [int(channel.strip()) for channel in BIN_CHANNEL.split(',')]
+    except ValueError:
+        print(f"Error - Invalid channel ID format in BIN_CHANNEL: {BIN_CHANNEL}")
+        exit()
 
 URL = environ.get("URL", "")
 if len(URL) == 0:
