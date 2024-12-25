@@ -14,7 +14,7 @@ from typing import Union, Optional, AsyncGenerator
 
 # local imports
 from web import web_app
-from info import LOG_CHANNEL, API_ID, API_HASH, BOT_TOKEN, PORT, BIN_CHANNEL, ADMINS, DATABASE_URL
+from info import LOG_CHANNEL, API_ID, API_HASH, BOT_TOKEN, PORT, ADMINS, DATABASE_URL
 from utils import get_readable_time
 
 # pymongo and database imports
@@ -93,19 +93,34 @@ class Bot(Client):
             exit()
         
         # Checking permissions in BIN_CHANNEL
-        try:
-            chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
-            if not chat_member.can_send_messages:
-                print("Bot does not have permission to send messages in BIN_CHANNEL")
-                await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
+        if isinstance(BIN_CHANNEL, list):
+            for channel in BIN_CHANNEL:
+                try:
+                    chat_member = await self.get_chat_member(channel, me.id)
+                    if not chat_member.can_send_messages:
+                        print(f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
+                        await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
+                        continue
+                    # Send test message and delete
+                    m = await self.send_message(chat_id=channel, text="Test")
+                    await m.delete()
+                except Exception as e:
+                    print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
+                    await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}: {e}")
+        else:
+            try:
+                chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
+                if not chat_member.can_send_messages:
+                    print("Bot does not have permission to send messages in BIN_CHANNEL")
+                    await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
+                    exit()
+                # Send test message and delete
+                m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
+                await m.delete()
+            except Exception as e:
+                print(f"Error while sending message to BIN_CHANNEL: {e}")
+                await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
                 exit()
-            # Send test message and delete
-            m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
-            await m.delete()
-        except Exception as e:
-            print(f"Error while sending message to BIN_CHANNEL: {e}")
-            await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
-            exit()
 
         # Send restart notifications to admins
         for admin in ADMINS:
@@ -144,5 +159,8 @@ async def start_bot():
             break  # Exit the loop on any other error
 
 # Start the bot
+if __name__ == "__main__":
+    asyncio.run(start_bot())
+
 if __name__ == "__main__":
     asyncio.run(start_bot())
