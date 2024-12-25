@@ -96,11 +96,13 @@ class Bot(Client):
         print(f"Debug - BIN_CHANNEL: {BIN_CHANNEL}")  # Debug log for BIN_CHANNEL
         if isinstance(BIN_CHANNEL, list):
             for channel in BIN_CHANNEL:
+                # Check permissions only if valid
                 if not await self.check_bin_channel_permissions(channel):
                     continue
         else:
+            # Single channel check
             if not await self.check_bin_channel_permissions(BIN_CHANNEL):
-                continue
+                return  # Early exit if permission check fails
 
         # Send restart notifications to admins
         for admin in ADMINS:
@@ -162,4 +164,5 @@ async def start_bot():
 # Start the bot
 if __name__ == "__main__":
     asyncio.run(start_bot())
+
 
