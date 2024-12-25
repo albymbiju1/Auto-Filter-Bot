@@ -1,5 +1,5 @@
 import os
-import time as _time
+import time as _time  # Alias `time` to `_time`
 import asyncio
 import uvloop
 
@@ -84,7 +84,8 @@ class Bot(Client):
         # Setup web app
         app = web.AppRunner(web_app)
         await app.setup()
-        await web.TCPSite(app, "0.0.0.0", PORT).start()
+        site = web.TCPSite(app, "0.0.0.0", PORT)  # Ensure PORT is 8000
+        await site.start()  # Explicitly start the site
 
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
@@ -98,7 +99,7 @@ class Bot(Client):
             for channel in BIN_CHANNEL:
                 try:
                     chat_member = await self.get_chat_member(channel, me.id)
-                    if not hasattr(chat_member, 'can_send_messages') or not chat_member.can_send_messages:
+                    if not chat_member.can_send_messages:
                         print(f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
                         await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
                         continue
@@ -111,7 +112,7 @@ class Bot(Client):
         else:
             try:
                 chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
-                if not hasattr(chat_member, 'can_send_messages') or not chat_member.can_send_messages:
+                if not chat_member.can_send_messages:
                     print("Bot does not have permission to send messages in BIN_CHANNEL")
                     await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
                     exit()
@@ -151,9 +152,10 @@ async def start_bot():
             await app.start()
             break  # exit the loop once the bot starts successfully
         except FloodWait as vp:
-            wait_time = get_readable_time(vp.value)
-            print(f"Flood Wait Occurred, Sleeping For {wait_time}")
-            await asyncio.sleep(vp.value)  # Await asyncio sleep to handle delay
+            wait_time = vp.value
+            wait_time_in_readable = get_readable_time(wait_time)
+            print(f"Flood Wait Occurred, Sleeping For {wait_time_in_readable}")
+            await asyncio.sleep(wait_time)  # Await asyncio sleep to handle delay
             print("Now Ready For Deploying!")
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -162,4 +164,3 @@ async def start_bot():
 # Start the bot
 if __name__ == "__main__":
     asyncio.run(start_bot())
-
