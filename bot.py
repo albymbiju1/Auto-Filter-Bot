@@ -57,9 +57,10 @@ class Bot(Client):
                 await super().start()  # Attempt to start the bot
                 break  # If successful, break out of retry loop
             except FloodWait as e:
-                print(f"FloodWait occurred, waiting for {e.x} seconds... (Attempt {attempt+1}/{retries})")
-                await asyncio.sleep(e.x)  # Wait for the specified time before retrying
-                print(f"Retrying after {e.x} seconds...")
+                wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                print(f"FloodWait occurred, waiting for {wait_time} seconds... (Attempt {attempt+1}/{retries})")
+                await asyncio.sleep(wait_time)  # Wait for the specified time before retrying
+                print(f"Retrying after {wait_time} seconds...")
             except Exception as e:
                 print(f"An error occurred while starting the bot: {e}")
                 exit()
@@ -111,9 +112,10 @@ class Bot(Client):
                     m = await self.send_message(chat_id=channel, text="Test")
                     await m.delete()
                 except FloodWait as e:
-                    print(f"FloodWait occurred, retrying in {e.x} seconds...")
-                    await asyncio.sleep(e.x)
-                    print(f"Retrying after {e.x} seconds...")
+                    wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                    print(f"FloodWait occurred, retrying in {wait_time} seconds...")
+                    await asyncio.sleep(wait_time)
+                    print(f"Retrying after {wait_time} seconds...")
                     await self.send_message(chat_id=channel, text="Test")
                     continue
                 except Exception as e:
@@ -129,9 +131,10 @@ class Bot(Client):
                 m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
                 await m.delete()
             except FloodWait as e:
-                print(f"FloodWait occurred, retrying in {e.x} seconds...")
-                await asyncio.sleep(e.x)
-                print(f"Retrying after {e.x} seconds...")
+                wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                print(f"FloodWait occurred, retrying in {wait_time} seconds...")
+                await asyncio.sleep(wait_time)
+                print(f"Retrying after {wait_time} seconds...")
                 await self.send_message(chat_id=BIN_CHANNEL, text="Test")
             except Exception as e:
                 print(f"Error while sending message to BIN_CHANNEL: {e}")
