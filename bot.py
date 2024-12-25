@@ -81,14 +81,10 @@ class Bot(Client):
         username = '@' + me.username
         print(f"{me.first_name} is started now 🤗")
         
-        # Setup web app and ensure it starts before proceeding
+        # Setup web app
         app = web.AppRunner(web_app)
         await app.setup()
-        site = web.TCPSite(app, "0.0.0.0", PORT)  # Ensure it binds to 0.0.0.0 and port 8000
-        await site.start()
-
-        # Give the web server time to initialize
-        await asyncio.sleep(2)
+        await web.TCPSite(app, "0.0.0.0", PORT).start()
 
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
@@ -100,32 +96,11 @@ class Bot(Client):
         print(f"Debug - BIN_CHANNEL: {BIN_CHANNEL}")  # Debug log for BIN_CHANNEL
         if isinstance(BIN_CHANNEL, list):
             for channel in BIN_CHANNEL:
-                try:
-                    chat_member = await self.get_chat_member(channel, me.id)
-                    if not chat_member.can_send_messages:
-                        print(f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
-                        await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
-                        continue
-                    # Send test message and delete
-                    m = await self.send_message(chat_id=channel, text="Test")
-                    await m.delete()
-                except Exception as e:
-                    print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
-                    await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}: {e}")
+                if not await self.check_bin_channel_permissions(channel):
+                    continue
         else:
-            try:
-                chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
-                if not chat_member.can_send_messages:
-                    print("Bot does not have permission to send messages in BIN_CHANNEL")
-                    await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
-                    exit()
-                # Send test message and delete
-                m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
-                await m.delete()
-            except Exception as e:
-                print(f"Error while sending message to BIN_CHANNEL: {e}")
-                await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
-                exit()
+            if not await self.check_bin_channel_permissions(BIN_CHANNEL):
+                continue
 
         # Send restart notifications to admins
         for admin in ADMINS:
@@ -135,17 +110,38 @@ class Bot(Client):
         await super().stop()
         print("Bot Stopped! Bye...")
 
-    async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]: 
-        """Iterate through a chat sequentially.""" 
-        current = offset 
-        while True: 
-            new_diff = min(200, limit - current) 
-            if new_diff <= 0: 
-                return 
-            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1))) 
-            for message in messages: 
-                yield message 
-                current += 1 
+    async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:
+        """Iterate through a chat sequentially."""
+        current = offset
+        while True:
+            new_diff = min(200, limit - current)
+            if new_diff <= 0:
+                return
+            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1)))
+            for message in messages:
+                yield message
+                current += 1
+
+    async def check_bin_channel_permissions(self, bin_channel):
+        try:
+            # Try fetching the chat member to check permissions
+            chat_member = await self.get_chat_member(bin_channel, temp.ME)
+            
+            # If the bot can't send messages, it won't be able to interact with the channel
+            if not chat_member.can_send_messages:
+                print(f"Bot does not have permission to send messages in BIN_CHANNEL {bin_channel}")
+                await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {bin_channel}")
+                return False
+            
+            # If we reach here, it means the bot has permission to send messages
+            # Send a test message and delete it to confirm everything works
+            m = await self.send_message(chat_id=bin_channel, text="Test")
+            await m.delete()
+            return True
+        except Exception as e:
+            print(f"Error while sending message to BIN_CHANNEL {bin_channel}: {e}")
+            await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {bin_channel}: {e}")
+            return False
 
 # Function to handle the bot start with flood wait handling
 async def start_bot():
@@ -166,3 +162,4 @@ async def start_bot():
 # Start the bot
 if __name__ == "__main__":
     asyncio.run(start_bot())
+
