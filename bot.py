@@ -81,11 +81,14 @@ class Bot(Client):
         username = '@' + me.username
         print(f"{me.first_name} is started now 🤗")
         
-        # Setup web app
+        # Setup web app and ensure it starts before proceeding
         app = web.AppRunner(web_app)
         await app.setup()
-        site = web.TCPSite(app, "0.0.0.0", PORT)  # Ensure PORT is 8000
-        await site.start()  # Explicitly start the site
+        site = web.TCPSite(app, "0.0.0.0", PORT)  # Ensure it binds to 0.0.0.0 and port 8000
+        await site.start()
+
+        # Give the web server time to initialize
+        await asyncio.sleep(2)
 
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
@@ -132,17 +135,17 @@ class Bot(Client):
         await super().stop()
         print("Bot Stopped! Bye...")
 
-    async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:
-        """Iterate through a chat sequentially."""
-        current = offset
-        while True:
-            new_diff = min(200, limit - current)
-            if new_diff <= 0:
-                return
-            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1)))
-            for message in messages:
-                yield message
-                current += 1
+    async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]: 
+        """Iterate through a chat sequentially.""" 
+        current = offset 
+        while True: 
+            new_diff = min(200, limit - current) 
+            if new_diff <= 0: 
+                return 
+            messages = await self.get_messages(chat_id, list(range(current, current + new_diff + 1))) 
+            for message in messages: 
+                yield message 
+                current += 1 
 
 # Function to handle the bot start with flood wait handling
 async def start_bot():
@@ -152,10 +155,9 @@ async def start_bot():
             await app.start()
             break  # exit the loop once the bot starts successfully
         except FloodWait as vp:
-            wait_time = vp.value
-            wait_time_in_readable = get_readable_time(wait_time)
-            print(f"Flood Wait Occurred, Sleeping For {wait_time_in_readable}")
-            await asyncio.sleep(wait_time)  # Await asyncio sleep to handle delay
+            wait_time = get_readable_time(vp.value)
+            print(f"Flood Wait Occurred, Sleeping For {wait_time}")
+            await asyncio.sleep(vp.value)  # Await asyncio sleep to handle delay
             print("Now Ready For Deploying!")
         except Exception as e:
             print(f"An error occurred: {e}")
