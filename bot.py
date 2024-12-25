@@ -31,8 +31,7 @@ class Bot(Client):
 
     async def start(self):
         temp.START_TIME = _time.time()
-        
-        # Enhanced logging to see where the failure is
+
         print("Starting bot... Checking MongoDB connection.")
         client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
         
@@ -50,18 +49,22 @@ class Bot(Client):
                 await super().start()  # Attempt to start the bot
                 break
             except FloodWait as e:
-                wait_time = 0
+                print(f"FloodWait encountered: {e}")  # Print the whole FloodWait object for debugging
+                wait_time = 60  # Default wait time if parsing fails
+                
                 try:
-                    # Attempt to parse the wait time correctly
-                    if isinstance(e.x, str):
-                        wait_time = int(e.x.split()[0])  # Extract numeric value if the message contains the wait time
+                    # Check the structure of the FloodWait exception
+                    if hasattr(e, 'x'):
+                        wait_time = e.x
+                    elif hasattr(e, 'seconds'):
+                        wait_time = e.seconds
                     else:
-                        wait_time = int(e.x)
+                        wait_time = 60  # Default fallback if we can't extract wait time
+                    
+                    print(f"Waiting for {wait_time} seconds due to FloodWait.")
                 except Exception as parse_error:
                     print(f"Error parsing FloodWait: {parse_error}")
-                    wait_time = 60  # Default wait time if parsing fails
                 
-                print(f"FloodWait encountered. Waiting for {wait_time} seconds...")
                 await asyncio.sleep(wait_time)
             except Exception as e:
                 print(f"Error during bot start attempt {attempt+1}: {e}")
@@ -78,7 +81,6 @@ class Bot(Client):
         temp.B_NAME = me.first_name
         print(f"Bot {me.first_name} started successfully!")
 
-        # More logic to handle channels and additional functionality goes here
         try:
             await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot started successfully: {me.first_name}")
         except Exception as e:
