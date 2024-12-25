@@ -110,7 +110,10 @@ class Bot(Client):
                     m = await self.send_message(chat_id=channel, text="Test")
                     await m.delete()
                 except Exception as e:
-                    print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
+                    if "PEER_ID_INVALID" in str(e):
+                        print(f"Bot has not yet interacted with the BIN_CHANNEL {channel}. Please make sure the bot is added to the channel.")
+                    else:
+                        print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
                     await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}: {e}")
         else:
             try:
@@ -123,7 +126,10 @@ class Bot(Client):
                 m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
                 await m.delete()
             except Exception as e:
-                print(f"Error while sending message to BIN_CHANNEL: {e}")
+                if "PEER_ID_INVALID" in str(e):
+                    print(f"Bot has not yet interacted with the BIN_CHANNEL. Please make sure the bot is added to the channel.")
+                else:
+                    print(f"Error while sending message to BIN_CHANNEL: {e}")
                 await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
                 exit()
 
@@ -164,6 +170,9 @@ async def start_bot():
             break  # Exit the loop on any other error
 
 # Start the bot
+if __name__ == "__main__":
+    asyncio.run(start_bot())
+
 if __name__ == "__main__":
     asyncio.run(start_bot())
 
