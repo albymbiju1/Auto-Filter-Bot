@@ -53,7 +53,7 @@ class Bot(Client):
                 wait_time = 60  # Default wait time if parsing fails
                 
                 try:
-                    # Check the structure of the FloodWait exception
+                    # Wait time is specified in the FloodWait exception object
                     if hasattr(e, 'x'):
                         wait_time = e.x
                     elif hasattr(e, 'seconds'):
@@ -65,7 +65,7 @@ class Bot(Client):
                 except Exception as parse_error:
                     print(f"Error parsing FloodWait: {parse_error}")
                 
-                await asyncio.sleep(wait_time)
+                await asyncio.sleep(wait_time)  # Wait for the correct time
             except Exception as e:
                 print(f"Error during bot start attempt {attempt+1}: {e}")
                 if attempt == retries - 1:
