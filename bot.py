@@ -109,9 +109,14 @@ class Bot(Client):
                     # Send test message and delete
                     m = await self.send_message(chat_id=channel, text="Test")
                     await m.delete()
+                except FloodWait as e:
+                    print(f"FloodWait occurred, retrying in {e.x} seconds...")
+                    await asyncio.sleep(e.x)  # Sleep for the duration specified by the flood wait
+                    await self.send_message(chat_id=channel, text="Test")  # Retry after waiting
+                    continue
                 except Exception as e:
                     print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
-                    await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}: {e}")
+                    await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}")
         else:
             try:
                 chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
@@ -122,6 +127,10 @@ class Bot(Client):
                 # Send test message and delete
                 m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
                 await m.delete()
+            except FloodWait as e:
+                print(f"FloodWait occurred, retrying in {e.x} seconds...")
+                await asyncio.sleep(e.x)  # Sleep for the duration specified by the flood wait
+                await self.send_message(chat_id=BIN_CHANNEL, text="Test")  # Retry after waiting
             except Exception as e:
                 print(f"Error while sending message to BIN_CHANNEL: {e}")
                 await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
@@ -147,21 +156,13 @@ class Bot(Client):
                 yield message 
                 current += 1 
 
-# Function to handle the bot start with flood wait handling
+# Function to handle the bot start with FloodWait handling
 async def start_bot():
-    while True:
-        try:
-            app = Bot()
-            await app.start()
-            break  # exit the loop once the bot starts successfully
-        except FloodWait as vp:
-            wait_time = get_readable_time(vp.value)
-            print(f"Flood Wait Occurred, Sleeping For {wait_time}")
-            await asyncio.sleep(vp.value)  # Await asyncio sleep to handle delay
-            print("Now Ready For Deploying!")
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            break  # Exit the loop on any other error
+    try:
+        app = Bot()
+        await app.start()
+    except Exception as e:
+        print(f"An error occurred while starting the bot: {e}")
 
 # Start the bot
 if __name__ == "__main__":
