@@ -1,5 +1,5 @@
 import os
-import time as _time  # Alias `time` to `_time`
+import time as _time
 import asyncio
 import uvloop
 
@@ -98,7 +98,7 @@ class Bot(Client):
             for channel in BIN_CHANNEL:
                 try:
                     chat_member = await self.get_chat_member(channel, me.id)
-                    if not chat_member.can_send_messages:
+                    if not hasattr(chat_member, 'can_send_messages') or not chat_member.can_send_messages:
                         print(f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
                         await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
                         continue
@@ -111,7 +111,7 @@ class Bot(Client):
         else:
             try:
                 chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
-                if not chat_member.can_send_messages:
+                if not hasattr(chat_member, 'can_send_messages') or not chat_member.can_send_messages:
                     print("Bot does not have permission to send messages in BIN_CHANNEL")
                     await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
                     exit()
@@ -162,3 +162,4 @@ async def start_bot():
 # Start the bot
 if __name__ == "__main__":
     asyncio.run(start_bot())
+
