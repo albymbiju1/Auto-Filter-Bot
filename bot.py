@@ -14,7 +14,7 @@ from typing import Union, Optional, AsyncGenerator
 
 # local imports
 from web import web_app
-from info import LOG_CHANNEL, API_ID, API_HASH, BOT_TOKEN, PORT, ADMINS, DATABASE_URL
+from info import LOG_CHANNEL, API_ID, API_HASH, BOT_TOKEN, PORT, ADMINS, DATABASE_URL, BIN_CHANNEL
 from utils import get_readable_time
 
 # pymongo and database imports
@@ -93,6 +93,7 @@ class Bot(Client):
             exit()
         
         # Checking permissions in BIN_CHANNEL
+        print(f"Debug - BIN_CHANNEL: {BIN_CHANNEL}")  # Debug log for BIN_CHANNEL
         if isinstance(BIN_CHANNEL, list):
             for channel in BIN_CHANNEL:
                 try:
@@ -159,8 +160,5 @@ async def start_bot():
             break  # Exit the loop on any other error
 
 # Start the bot
-if __name__ == "__main__":
-    asyncio.run(start_bot())
-
 if __name__ == "__main__":
     asyncio.run(start_bot())
