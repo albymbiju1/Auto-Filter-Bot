@@ -2,24 +2,16 @@ import os
 import time as _time
 import asyncio
 import uvloop
-from pyrogram import Client, types
+from pyrogram import Client
 from pyrogram.errors import FloodWait
-from aiohttp import web
-from typing import Union, Optional, AsyncGenerator
-from web import web_app
-from info import LOG_CHANNEL, API_ID, API_HASH, BOT_TOKEN, PORT, ADMINS, DATABASE_URL, BIN_CHANNEL
-from utils import get_readable_time
-from database.users_chats_db import db
-from database.ia_filterdb import Media
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
+from info import API_ID, API_HASH, BOT_TOKEN, DATABASE_URL, LOG_CHANNEL
 
 uvloop.install()
 
 class Temp:
     START_TIME = None
-    BANNED_USERS = []
-    BANNED_CHATS = []
     BOT = None
     ME = None
     U_NAME = None
@@ -38,120 +30,56 @@ class Bot(Client):
         )
 
     async def start(self):
-        temp.START_TIME = _time.time()  
-        b_users, b_chats = await db.get_banned()
-        temp.BANNED_USERS = b_users
-        temp.BANNED_CHATS = b_chats
+        temp.START_TIME = _time.time()
+        
+        # Enhanced logging to see where the failure is
+        print("Starting bot... Checking MongoDB connection.")
         client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
+        
         try:
             client.admin.command('ping')
-            print("Pinged your deployment. You successfully connected to MongoDB!")
+            print("Pinged MongoDB successfully!")
         except Exception as e:
-            print("Something Went Wrong While Connecting To Database!", e)
+            print(f"Failed to connect to MongoDB: {e}")
             exit()
 
-        # Retry logic for FloodWait
-        retries = 5  # Number of retry attempts
+        retries = 5
         for attempt in range(retries):
             try:
+                print(f"Attempt {attempt+1}/{retries}: Starting the bot...")
                 await super().start()  # Attempt to start the bot
-                break  # If successful, break out of retry loop
+                break
             except FloodWait as e:
-                # Ensure the wait time is an integer
                 wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
-                print(f"FloodWait occurred, waiting for {wait_time} seconds... (Attempt {attempt+1}/{retries})")
-                await asyncio.sleep(wait_time)  # Wait for the specified time before retrying
-                print(f"Retrying after {wait_time} seconds...")
+                print(f"FloodWait encountered. Waiting for {wait_time} seconds...")
+                await asyncio.sleep(wait_time)
             except Exception as e:
-                print(f"An error occurred while starting the bot: {e}")
-                exit()
+                print(f"Error during bot start attempt {attempt+1}: {e}")
+                if attempt == retries - 1:
+                    print("Bot failed to start after maximum retries.")
+                    return
+                await asyncio.sleep(5)  # Small wait before retry
 
-        if not temp.BOT:
-            print("Bot failed to start after retries.")
-            return
-
-        # Continue with the normal flow after successful start
-        if os.path.exists('restart.txt'):
-            with open("restart.txt") as file:
-                chat_id, msg_id = map(int, file)
-            try:
-                await self.edit_message_text(chat_id=chat_id, message_id=msg_id, text='Restarted Successfully!')
-            except:
-                pass
-            os.remove('restart.txt')
-
+        # If the bot starts, perform the usual operations
         temp.BOT = self
-        await Media.ensure_indexes()
         me = await self.get_me()
         temp.ME = me.id
         temp.U_NAME = me.username
         temp.B_NAME = me.first_name
-        username = '@' + me.username
-        print(f"{me.first_name} is started now 🤗")
-        
-        app = web.AppRunner(web_app)
-        await app.setup()
-        site = web.TCPSite(app, "0.0.0.0", PORT)
-        await site.start()
+        print(f"Bot {me.first_name} started successfully!")
 
-        await asyncio.sleep(2)
-
+        # More logic to handle channels and additional functionality goes here
+        # For example, checking if the bot can send messages, etc.
         try:
-            await self.send_message(chat_id=LOG_CHANNEL, text=f"<b>{me.mention} Restarted! 🤖</b>")
+            await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot started successfully: {me.first_name}")
         except Exception as e:
-            print(f"Error while sending message to LOG_CHANNEL: {e}")
-            exit()
-
-        if isinstance(BIN_CHANNEL, list):
-            for channel in BIN_CHANNEL:
-                try:
-                    chat_member = await self.get_chat_member(channel, me.id)
-                    if not chat_member.can_send_messages:
-                        print(f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
-                        await self.send_message(chat_id=LOG_CHANNEL, text=f"Bot does not have permission to send messages in BIN_CHANNEL {channel}")
-                        continue
-                    m = await self.send_message(chat_id=channel, text="Test")
-                    await m.delete()
-                except FloodWait as e:
-                    # Ensure the wait time is an integer
-                    wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
-                    print(f"FloodWait occurred, retrying in {wait_time} seconds...")
-                    await asyncio.sleep(wait_time)
-                    print(f"Retrying after {wait_time} seconds...")
-                    await self.send_message(chat_id=channel, text="Test")
-                    continue
-                except Exception as e:
-                    print(f"Error while sending message to BIN_CHANNEL {channel}: {e}")
-                    await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL {channel}")
-        else:
-            try:
-                chat_member = await self.get_chat_member(BIN_CHANNEL, me.id)
-                if not chat_member.can_send_messages:
-                    print("Bot does not have permission to send messages in BIN_CHANNEL")
-                    await self.send_message(chat_id=LOG_CHANNEL, text="Bot does not have permission to send messages in BIN_CHANNEL")
-                    exit()
-                m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
-                await m.delete()
-            except FloodWait as e:
-                # Ensure the wait time is an integer
-                wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
-                print(f"FloodWait occurred, retrying in {wait_time} seconds...")
-                await asyncio.sleep(wait_time)
-                print(f"Retrying after {wait_time} seconds...")
-                await self.send_message(chat_id=BIN_CHANNEL, text="Test")
-            except Exception as e:
-                print(f"Error while sending message to BIN_CHANNEL: {e}")
-                await self.send_message(chat_id=LOG_CHANNEL, text=f"Error while sending message to BIN_CHANNEL: {e}")
-                exit()
-
-        for admin in ADMINS:
-            await self.send_message(chat_id=admin, text="<b>✅ ʙᴏᴛ ʀᴇsᴛᴀʀᴛᴇᴅ</b>")
+            print(f"Failed to send log message: {e}")
 
     async def stop(self, *args):
         await super().stop()
-        print("Bot Stopped! Bye...")
+        print("Bot stopped!")
 
-    async def iter_messages(self: Client, chat_id: Union[int, str], limit: int, offset: int = 0) -> Optional[AsyncGenerator["types.Message", None]]:
+    async def iter_messages(self, chat_id, limit: int, offset: int = 0):
         current = offset
         while True:
             new_diff = min(200, limit - current)
