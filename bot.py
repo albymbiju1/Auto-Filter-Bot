@@ -57,7 +57,8 @@ class Bot(Client):
                 await super().start()  # Attempt to start the bot
                 break  # If successful, break out of retry loop
             except FloodWait as e:
-                wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                # Ensure the wait time is an integer
+                wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
                 print(f"FloodWait occurred, waiting for {wait_time} seconds... (Attempt {attempt+1}/{retries})")
                 await asyncio.sleep(wait_time)  # Wait for the specified time before retrying
                 print(f"Retrying after {wait_time} seconds...")
@@ -112,7 +113,8 @@ class Bot(Client):
                     m = await self.send_message(chat_id=channel, text="Test")
                     await m.delete()
                 except FloodWait as e:
-                    wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                    # Ensure the wait time is an integer
+                    wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
                     print(f"FloodWait occurred, retrying in {wait_time} seconds...")
                     await asyncio.sleep(wait_time)
                     print(f"Retrying after {wait_time} seconds...")
@@ -131,7 +133,8 @@ class Bot(Client):
                 m = await self.send_message(chat_id=BIN_CHANNEL, text="Test")
                 await m.delete()
             except FloodWait as e:
-                wait_time = e.x if hasattr(e, 'x') else e.args[0]  # Adjust based on how 'x' is passed
+                # Ensure the wait time is an integer
+                wait_time = int(e.x) if hasattr(e, 'x') else int(e.args[0])
                 print(f"FloodWait occurred, retrying in {wait_time} seconds...")
                 await asyncio.sleep(wait_time)
                 print(f"Retrying after {wait_time} seconds...")
